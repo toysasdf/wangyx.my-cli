@@ -7,9 +7,7 @@ import errorCode from '@/utils/errorCode'
 import cache from '@/plugins/cache'
 import saveAs from 'file-saver'
 import useUserStore from '@/store/modules/user'
-
 const baseURL = import.meta.env.VITE_API_BASE_URL  //运行环境配置BASE_API_URL
-
 //定义一个变量: isRefreshTokening用来判断是否正在请求新token
 let isRefreshTokening = false;
 //定义一个队列: watingQueue存放刷新token期间,由于token过期产生的新出错请求
@@ -93,36 +91,45 @@ axios.interceptors.response.use(async res => {
   if (res.request.responseType ===  'blob' || res.request.responseType ===  'arraybuffer') {
     return res.data
   }
+  if(res.config.headers['isCheckData']){
+      if(code===200){
+        return Promise.resolve(res.data)
+      }
+      if(code===500){
+        return Promise.reject(new Error())
+      }
+      //后边的逻辑与检查数据源类型请求无关
+  }
   if (code === 401) { //响应处理无感刷新
-   if(res.config.url!=='/api/refreshToken'){ //表明access_token已经过期但是还没有刷新token
-      return await silentTokenRefresh(res.config); //这里把配置传进去
-   }else{
-    //如果刷新token的请求也是401 证明refresh_token过期了 只能重新登陆
-    if (!isRelogin.show) {
-      isRelogin.show = true;
-      ElMessageBox.confirm('登录状态已过期，您可以继续留在该页面，或者重新登录', '系统提示', { confirmButtonText: '重新登录', cancelButtonText: '取消', type: 'warning' }).then(() => {
-        isRelogin.show = false;
-        useUserStore().logOut().then(() => {
-          location.href = '/index';
-        })
-    }).catch(() => {
-      isRelogin.show = false;
-    });
-  }
-   return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
+    if(res.config.url!=='/api/refreshToken'){ //表明access_token已经过期但是还没有刷新token
+       return await silentTokenRefresh(res.config); //这里把配置传进去
+    }else{
+     //如果刷新token的请求也是401 证明refresh_token过期了 只能重新登陆
+     if (!isRelogin.show) {
+       isRelogin.show = true;
+       ElMessageBox.confirm('登录状态已过期，您可以继续留在该页面，或者重新登录', '系统提示', { confirmButtonText: '重新登录', cancelButtonText: '取消', type: 'warning' }).then(() => {
+         isRelogin.show = false;
+         useUserStore().logOut().then(() => {
+           location.href = '/index';
+         })
+     }).catch(() => {
+       isRelogin.show = false;
+     });
    }
-  } else if (code === 500) {
-    ElMessage({ message: msg, type: 'error' })
-    return Promise.reject(new Error(msg))
-  } else if (code === 601) {
-    ElMessage({ message: msg, type: 'warning' })
-    return Promise.reject(new Error(msg))
-  } else if (code !== 200) {
-    ElNotification.error({ title: msg })
-    return Promise.reject('error')
-  } else {
-    return Promise.resolve(res.data)
-  }
+    return Promise.reject('无效的会话，或者会话已过期，请重新登录。')
+    }
+   } else if (code === 500) {
+     ElMessage({ message: msg, type: 'error' })
+     return Promise.reject(new Error(msg))
+   } else if (code === 601) {
+     ElMessage({ message: msg, type: 'warning' })
+     return Promise.reject(new Error(msg))
+   } else if (code !== 200) {
+     ElNotification.error({ title: msg })
+     return Promise.reject('error')
+   } else {
+     return Promise.resolve(res.data)
+   }
 },
 error => {
   let { message } = error;
@@ -194,7 +201,7 @@ async function refreshToken() {
 function tryWatingRequest() {
   while (watingQueue.length > 0) {
     const { config, resolve } = watingQueue.shift();
-    resolve(service(config)); // 记得上面waitingRefresh中新创建的promise吗,其resolve在这里使用了,这样该promise的状态就依赖新请求的响应拦截器的返回状态了
+    resolve(service(config));
   }
 }
-export default service
+export default service //常规请求

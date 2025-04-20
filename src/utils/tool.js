@@ -33,26 +33,49 @@ export function handleParams(params) {
  * @returns {Boolean}
  */
 export function blobValidate(data) {
-  return data.type !== 'application/json'
+  return data.type !== "application/json";
 }
 /**
- * 判断value字符串是否为空 
+ * 判断value字符串是否为空
  * @param {string} value
  * @returns {Boolean}
  */
 export function isEmpty(value) {
-  if (value == null || value == "" || value == undefined || value == "undefined") {
-    return true
+  if (
+    value == null ||
+    value == "" ||
+    value == undefined ||
+    value == "undefined"
+  ) {
+    return true;
   }
-  return false
+  return false;
 }
 
 /**
- * 判断url是否是http或https 
+ * 判断url是否是http或https
  * @param {string} url
  * @returns {Boolean}
  */
 export function isHttp(url) {
-  return url.indexOf('http://') !== -1 || url.indexOf('https://') !== -1
+  return url.indexOf("http://") !== -1 || url.indexOf("https://") !== -1;
 }
-
+/**
+ * 用setTimeout代替setInterval
+ * @param {function} fn
+ * @param {number} delay
+ * @returns
+ */
+export function mySetInterval(fn, delay) {
+  let timer = null; //开关 用于终止setInterval
+  let temp = () => {
+    fn();
+    timer = setTimeout(temp, delay);
+  };
+  temp();
+  return {
+    clear: function () {
+      clearTimeout(timer);
+    },
+  };
+}
