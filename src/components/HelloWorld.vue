@@ -1,45 +1,55 @@
-<script setup>
-import { ref } from "vue";
-
-defineProps({
-  msg: String,
-});
-
-const count = ref(0);
-</script>
-
 <template>
-  <h1>{{ msg }}
-
-</h1>
-
-  <div class="card">
-    <button type="button" @click="count++">count is {{ count }}</button>
-    <p>
-      Edit
-      <code>components/HelloWorld.vue</code> to test HMR
-    </p>
-  </div>
-
-  <p>
-    Check out
-    <a href="https://vuejs.org/guide/quick-start.html#local" target="_blank"
-      >create-vue</a
-    >, the official Vue + Vite starter
-  </p>
-  <p>
-    Learn more about IDE Support for Vue in the
-    <a
-      href="https://vuejs.org/guide/scaling-up/tooling.html#ide-support"
-      target="_blank"
-      >Vue Docs Scaling up Guide</a
-    >.
-  </p>
-  <p class="read-the-docs">Click on the Vite and Vue logos to learn more</p>
+  <DynamicForm 
+  :config="formConfig"
+  @submit="handleSubmit"
+/>
 </template>
+<script setup>
+import DynamicForm from './DynamicForm/index.vue'
+// 表单配置
+const formConfig = ref([
+  {
+    type: 'input',
+    label: '用户名',
+    prop: 'username',
+    placeholder: '请输入用户名',
+    rules: [
+      { required: true, message: '用户名不能为空' },
+      { min: 3, max: 12, message: '长度在3到12个字符' }
+    ]
+  },
+  {
+    type: 'select',
+    label: '城市',
+    prop: 'city',
+    options: [
+      { label: '北京', value: 1 },
+      { label: '上海', value: 2 },
+      { label: '杭州', value: 3 },
+    ]
+  },
+  {
+    type: 'date',
+    label: '入职日期',
+    prop: 'date',
+    attrs: {
+      type: 'date',
+      valueFormat: 'YYYY-MM-DD'
+    }
+  },
+  {
+    type: 'switch',
+    label: '启用状态',
+    prop: 'status',
+    defaultValue: true
+  }
+])
 
-<style scoped>
-.read-the-docs {
-  color: #888;
+// 提交处理
+const handleSubmit = (formData) => {
+  console.log('提交数据：', formData)
+  alert(JSON.stringify(formData, null, 2))
 }
+</script>
+<style scoped lang="scss">
 </style>

@@ -10,10 +10,8 @@ import useUserStore from '@/store/modules/user'
 const baseURL = import.meta.env.VITE_API_BASE_URL  //运行环境配置BASE_API_URL
 //定义一个变量: isRefreshTokening用来判断是否正在请求新token
 let isRefreshTokening = false;
-//定义一个队列: watingQueue存放刷新token期间,由于token过期产生的新出错请求
-let watingQueue = []
-
-
+//定义一个队列: waitingQueue存放刷新token期间,由于token过期产生的新出错请求
+let waitingQueue = []
 let downloadLoadingInstance;
 // 是否显示重新登录
 export let isRelogin = { show: false };
@@ -22,11 +20,12 @@ axios.defaults.headers['Content-Type'] = 'application/json;chartset=utf-8'
 //创建axios实例
 const service = axios.create({
   baseUrl: import.meta.env.VITE_API_BASE_URL, //表示所有url请求的公共部分
-  timeout:10000
+  timeout:10000,
+  withCredentials: false //默认不携带cookie
 })
 //首先配置axios拦截器 
 //请求拦截器 实现无感刷新
-axios.interceptors.request.use(config =>{
+service.interceptors.request.use(config =>{
   //请求是否需要设置token 如果请求头配置了isToken=false 表示需要禁用token 这里的token变量就为true
   const isToken = (config.headers || {}).isToken === false
   //是否防止数据重复提交 如果请求头里面的repeatCommit为true 那么就需要禁止重复请求提交 isRepeatCommit为true
@@ -34,7 +33,7 @@ axios.interceptors.request.use(config =>{
   if(getTokenInlocal()&&!isToken){//access_token存在并且没有禁用token
     //检验access token  
     if(config.url!=='/api/refreshToken'){//不是请求刷新token 那么就带上access_token
-      config.headers['Authorization'] = 'Bearer' + getTokenInlocal() //携带上access_token 存储在localstorage中
+      config.headers['Authorization'] = 'Bearer ' + getTokenInlocal() //携带上access_token 存储在localstorage中
     }else{//是请求刷新token 需要带上refresh_token 存储在http only cookie 里面 自动携带 需要处理跨域
        config.withCredentials =  true
     }
@@ -82,7 +81,7 @@ axios.interceptors.request.use(config =>{
     Promise.reject(error)
 })
 //响应拦截器
-axios.interceptors.response.use(async res => {
+service.interceptors.response.use(async res => {
   // 未设置状态码则默认成功状态
   const code = res.data.code || 200;
   // 获取错误信息
@@ -179,12 +178,12 @@ async function silentTokenRefresh(config){
 }
 function waitingRefresh(config) {
   return new Promise(resolve => {
-    watingQueue.push({ config, resolve });
+    waitingQueue.push({ config, resolve });
   });
 }
 async function startRefresh(config) {
   await refreshToken(); // 请求新的token
-  tryWatingRequest();
+  tryWaitingRequest();
   return service(config); //第一个发现token失效的请求,直接重新发送
 }
 // 请求新token,并更新本地
@@ -198,9 +197,9 @@ async function refreshToken() {
   isRefreshTokening = false;
 }
 // 重新发送由于token过期存储的请求
-function tryWatingRequest() {
-  while (watingQueue.length > 0) {
-    const { config, resolve } = watingQueue.shift();
+function tryWaitingRequest() {
+  while (waitingQueue.length > 0) {
+    const { config, resolve } = waitingQueue.shift();
     resolve(service(config));
   }
 }

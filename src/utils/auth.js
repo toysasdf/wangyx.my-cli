@@ -1,5 +1,12 @@
+/*
+ * @Author: toys
+ * @Date: 2025-04-17 22:11:55
+ * @LastEditors:
+ * @LastEditTime: 2025-04-22 23:50:31
+ * @Description: 请填写简介
+ */
 import Cookies from "js-cookie";
-import cache from '@/plugins/cache'
+import cache from "@/plugins/cache";
 import { chain } from "lodash";
 const TokenKey = "Access-Token";
 //token存储在cookie里面
@@ -7,7 +14,7 @@ const TokenKey = "Access-Token";
 //给个默认的token配置
 // 默认配置
 const DEFAULT_COOKIE_CONFIG = {
-  expires:  15 * 60 * 1000 ,  //后面做无感刷新登录 access token仅仅给15分钟
+  expires: 15 * 60 * 1000, //后面做无感刷新登录 access token仅仅给15分钟
   sameSite: "Strict", // 防止CSRF
 };
 //获取token
@@ -40,7 +47,7 @@ export function getTokenInlocal() {
 }
 //设置token
 export function setTokenInlocal(token) {
- cache.local.set(TokenKey,token);
+  cache.local.set(TokenKey, token);
 }
 //删除token
 export function removeTokenInlocal() {
@@ -48,5 +55,5 @@ export function removeTokenInlocal() {
 }
 //存储refresh_token在http only cookie中
 export function setRefreshToken(token) {
-  Cookies.set('Refresh_Token', token,{ httpOnly: true });
+  Cookies.set("Refresh_Token", token, { httpOnly: true });
 }

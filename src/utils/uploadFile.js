@@ -1,5 +1,4 @@
 import SparkMD5 from "spark-md5";
-
 /**
  * @message:获取文件md5和后缀
  * @param file
@@ -107,7 +106,6 @@ function paralleTask(tasks, max = 4) {
           if (isFinied) {
             resolve(0);
           }
-
           const hasTask = nextIndex < len;
           if (hasTask) {
             _run();
