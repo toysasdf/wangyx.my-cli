@@ -79,3 +79,21 @@ export function mySetInterval(fn, delay) {
     },
   };
 }
+/**
+ * @description: 防抖处理函数
+ * @param {*} fn
+ * @param {*} delay
+ * @return {*}
+ * @author: toys
+ */
+export function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    if (timer) {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        fn.apply(null, args);
+      }, delay);
+    }
+  };
+}

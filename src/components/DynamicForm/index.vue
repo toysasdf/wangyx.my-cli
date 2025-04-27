@@ -1,6 +1,6 @@
 <template>
   <el-form ref="formRef" :model="formData" :rules="rules" label-width="120px">
-    <template v-for="item in config" :key="item.prop">
+    <template v-for="item in props.config" :key="item.prop">
       <el-form-item :label="item.label" :prop="item.prop" :rules="item.rules">
         <!-- 动态组件渲染 -->
         <component
@@ -21,14 +21,13 @@
         </component>
       </el-form-item>
     </template>
-
     <el-form-item>
       <el-button type="primary" @click="submitForm">提交</el-button>
     </el-form-item>
   </el-form>
 </template>
-
 <script setup>
+import {useFormLinkage} from '@/utils/useFormLinkage.js'
 import { ref, reactive, defineProps, defineEmits } from "vue";
 import {
   ElInput,
@@ -56,7 +55,6 @@ const componentMap = {
 // 动态生成表单数据
 const formData = reactive({});
 const rules = reactive({});
-
 // 初始化数据和规则
 props.config.forEach((item) => {
   formData[item.prop] = item.defaultValue ?? "";
@@ -65,8 +63,9 @@ props.config.forEach((item) => {
       trigger: "blur",
       ...rule,
     }));
-  }
+  }//初始化一些验证规则
 });
+useFormLinkage(formData,props.config) //通过表单数据和表单的配置建立表单联动
 // 表单引用
 const formRef = ref(null);
 // 提交处理
