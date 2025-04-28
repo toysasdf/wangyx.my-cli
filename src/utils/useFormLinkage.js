@@ -1,9 +1,11 @@
+import { graphic } from "echarts";
 export function useFormLinkage(formData, config) {
   const dependencies = new Map(); //通过哈希表来存储联动关系
   // 注册联动关系
   const registerLinkage = (source, target, handler) => {
-    if (hasCycle(source, target, dependencies)) {
-      throw new Error(`检测到循环依赖：${source} -> ${target}，请检查你的表单配置`);
+    let isCycle = detectCycle(dependencies)
+    if (isCycle) {
+      throw new Error(`检测到循环依赖：${isCycle}，请检查你的表单配置`);
     }
     if (!dependencies.has(source)) {
       dependencies.set(source, new Set());
@@ -31,39 +33,37 @@ export function useFormLinkage(formData, config) {
       }
     );
   });
-  console.log(dependencies);
 }
 //为了防止循环依赖 可以构建有向无环图
 function detectCycle(dependencies) {
-  const graph = {}; // 邻接表
-  const indegree = {}; // 入度表
-  // 初始化
-  for (const key in dependencies) {
-    graph[key] = dependencies[key] || [];
-    indegree[key] = 0;
-  }
-  // 计算入度
-  for (const key in graph) {
-    for (const neighbor of graph[key]) {
-      indegree[neighbor] = (indegree[neighbor] || 0) + 1;
+  const visited = new Set();
+  const recStack = new Set();
+  const dfs = (node) => {
+    if (!dependencies.has(node)) {
+      return false;
     }
-  }
-  // 找入度为0的节点
-  const queue = Object.keys(indegree).filter(key => indegree[key] === 0);
+    if (recStack.has(node)) {
+      return node; // 当前路径上又遇到自己，出现了环
+    }
+    if (visited.has(node)) {
+      return false; // 已经检查过且没问题
+    }
+    visited.add(node);
+    recStack.add(node);
 
-  let visitedCount = 0;
-
-  while (queue.length) {
-    const node = queue.shift();
-    visitedCount++;
-
-    for (const neighbor of graph[node]) {
-      indegree[neighbor]--;
-      if (indegree[neighbor] === 0) {
-        queue.push(neighbor);
+    for (const { target } of dependencies.get(node)) {
+      if (dfs(target)) {
+        return node;
       }
     }
+    recStack.delete(node); // 退栈
+    return false;
+  };
+
+  for (const node of dependencies.keys()) {
+    if (dfs(node)) {
+      return node;
+    }
   }
-  // 如果访问的节点数 !== 总节点数，说明有环
-  return visitedCount !== Object.keys(dependencies).length;
+  return false;
 }

@@ -9,7 +9,7 @@ export const userFormConfig = [
     options: [
       { label: '个人用户', value: 1 },
       { label: '企业用户', value: 2 }
-    ]
+    ],
   },
   {
     type: 'input',
